@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:punctually/main.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:punctually/cubit/state_cubit.dart';
+import 'package:punctually/screens/profile.dart';
 import 'package:punctually/screens/report.dart';
 import 'package:punctually/shared.dart';
 import 'package:punctually/style.dart';
@@ -11,7 +13,14 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Container(
+      body: BlocListener<StateCubit, StateState>(
+        bloc: StateCubit.i,
+        listenWhen: (previous, current) => current is HomeScreenState,
+        listener: (context, state) {
+          if (state is HomeScreenState) {
+            scanStatusDialog(context, state.scanStatus);
+          }
+        },
         child: Stack(
           children: [
             upperColor,
@@ -21,24 +30,70 @@ class HomeScreen extends StatelessWidget {
                     horizontal: 15.0, vertical: 15.0),
                 child: Column(
                   children: [
-                    profileSection(),
+                    profileSection(context),
                     const SizedBox(height: 20),
                     Expanded(
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(22),
                         child: ListView.builder(
-                          padding: EdgeInsets.symmetric(vertical: 10),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
                           itemBuilder: (context, index) => monthCard(context),
                         ),
                       ),
                     ),
                     const SizedBox(height: 10),
-                    scanButton()
+                    scanButton(context)
                   ],
                 ),
               ),
             )
           ],
+        ),
+      ),
+    );
+  }
+
+  // Scan Status Dialog Widget:---------------------------------------------------------------------
+  scanStatusDialog(context, success) {
+    return showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30),
+        ),
+        child: SizedBox(
+          width: double.infinity,
+          height: 350,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 80,
+                backgroundColor:
+                    success ? Color(0xFFE0FFE9) : Colors.red.withOpacity(.1),
+                child: Icon(
+                  success ? Icons.check_rounded : Icons.clear_rounded,
+                  size: 80,
+                  color: success ? Color(0xFF04A932) : Colors.redAccent,
+                ),
+              ),
+              SizedBox(height: 30),
+              Text(
+                success ? "Success" : "Invalid Code",
+                style: TextStyle(
+                  fontSize: 23,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black.withOpacity(.75),
+                ),
+              ),
+              SizedBox(height: 20),
+              if (success)
+                Text(
+                  "Checked in today",
+                  style: TextStyle(color: Colors.grey[600]),
+                )
+            ],
+          ),
         ),
       ),
     );
@@ -112,48 +167,63 @@ class HomeScreen extends StatelessWidget {
   }
 
   // Scan Button Widget:---------------------------------------------------------------------
-  SizedBox scanButton() {
+  SizedBox scanButton(context) {
     return SizedBox(
       width: 250,
       child: ElevatedButton(
-          onPressed: () {},
-          style: ElevatedButton.styleFrom(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-            padding: EdgeInsets.symmetric(vertical: 15, horizontal: 40),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                "Scan QR",
-                style: TextStyle(fontSize: 20),
-              ),
-              SizedBox(width: 10),
-              Icon(
-                Icons.qr_code_2_rounded,
-                size: 32,
-              )
-            ],
-          )),
+        onPressed: () => StateCubit.i.scanQR(context),
+        style: ElevatedButton.styleFrom(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 40),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              "Scan QR",
+              style: TextStyle(fontSize: 20),
+            ),
+            SizedBox(width: 10),
+            Icon(
+              Icons.qr_code_2_rounded,
+              size: 32,
+            )
+          ],
+        ),
+      ),
     );
   }
 
   // Profile Section Widget:---------------------------------------------------------------------
-  Container profileSection() {
+  Container profileSection(context) {
     return Container(
-      margin: EdgeInsets.only(top: 15),
+      margin: const EdgeInsets.only(top: 15),
       width: double.infinity,
       // color: Colors.red,
       child: Row(
         children: [
-          Container(
-            height: 130,
-            width: 130,
-            decoration: BoxDecoration(
-              color: Colors.yellow,
-              borderRadius: BorderRadius.circular(20),
-            ),
+          BlocBuilder<StateCubit, StateState>(
+            bloc: StateCubit.i,
+            buildWhen: (prev, cur) => cur is ProfileImageState,
+            builder: (context, state) {
+              return Container(
+                height: 130,
+                width: 130,
+                decoration: BoxDecoration(
+                    color: Colors.yellow,
+                    borderRadius: BorderRadius.circular(20),
+                    image: state is ProfileImageState && state.image != null
+                        ? DecorationImage(
+                            image:
+                                FileImage((state as ProfileImageState).image!),
+                            fit: BoxFit.cover,
+                          )
+                        : DecorationImage(
+                            image: AssetImage("assets/profile_img.png"),
+                            fit: BoxFit.cover)),
+              );
+            },
           ),
           SizedBox(width: 20),
           Column(
@@ -174,7 +244,7 @@ class HomeScreen extends StatelessWidget {
                     fontSize: 16, color: Colors.white.withOpacity(.9)),
               ),
               ElevatedButton(
-                onPressed: () {},
+                onPressed: () => navTo(context, ProfileScreen()),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
@@ -204,7 +274,7 @@ class HomeScreen extends StatelessWidget {
         width: double.infinity,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(30),
-          color: PrimaryColor,
+          color: primaryColor,
         ),
       )
     ],

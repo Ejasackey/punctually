@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:punctually/models/month.dart';
 import 'package:punctually/screens/home.dart';
-import 'package:punctually/screens/report.dart';
 import 'package:punctually/style.dart';
 
-void main() {
+void main() async {
+  await Hive.initFlutter();
+  await Hive.openBox("months");
+  await Hive.openBox("profile");
+  // Hive.registerAdapter();
   runApp(const App());
 }
-
-const homeRoute = "/";
-const reportScreenRoute = "/report_screen";
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -19,7 +21,8 @@ class App extends StatelessWidget {
     return MaterialApp(
       title: 'Punctually',
       theme: ThemeData(
-        colorScheme: ColorScheme.light(primary: PrimaryColor),
+        // useMaterial3: true,
+        colorScheme: ColorScheme.light(primary: primaryColor),
       ),
       home: HomeScreen(),
     );
