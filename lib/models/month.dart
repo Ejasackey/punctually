@@ -1,5 +1,5 @@
 import 'package:hive/hive.dart';
-
+part 'month.g.dart';
 @HiveType(typeId: 0)
 class Month {
   

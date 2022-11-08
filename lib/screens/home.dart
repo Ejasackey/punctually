@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:punctually/cubit/state_cubit.dart';
@@ -196,7 +197,7 @@ class HomeScreen extends StatelessWidget {
   }
 
   // Profile Section Widget:---------------------------------------------------------------------
-  Container profileSection(context) {
+  Widget profileSection(context) {
     return Container(
       margin: const EdgeInsets.only(top: 15),
       width: double.infinity,
@@ -205,23 +206,27 @@ class HomeScreen extends StatelessWidget {
         children: [
           BlocBuilder<StateCubit, StateState>(
             bloc: StateCubit.i,
-            buildWhen: (prev, cur) => cur is ProfileImageState,
+            buildWhen: (prev, cur) => cur is ProfileState,
             builder: (context, state) {
               return Container(
                 height: 130,
                 width: 130,
                 decoration: BoxDecoration(
-                    color: Colors.yellow,
-                    borderRadius: BorderRadius.circular(20),
-                    image: state is ProfileImageState && state.image != null
-                        ? DecorationImage(
-                            image:
-                                FileImage((state as ProfileImageState).image!),
-                            fit: BoxFit.cover,
-                          )
-                        : DecorationImage(
-                            image: AssetImage("assets/profile_img.png"),
-                            fit: BoxFit.cover)),
+                  color: Colors.yellow,
+                  borderRadius: BorderRadius.circular(20),
+                  image:
+                      state is ProfileState && state.user!.profileUrl.isNotEmpty
+                          ? DecorationImage(
+                              image: FileImage(
+                                File(state.user!.profileUrl!),
+                              ),
+                              fit: BoxFit.cover,
+                            )
+                          : DecorationImage(
+                              image: AssetImage("assets/profile_img.png"),
+                              fit: BoxFit.cover,
+                            ),
+                ),
               );
             },
           ),

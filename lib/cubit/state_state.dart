@@ -5,10 +5,10 @@ abstract class StateState {}
 
 class StateInitial extends StateState {}
 
-class ProfileImageState extends StateState {
-  File? image;
+class ProfileState extends StateState {
+  User? user;
   bool hasError;
-  ProfileImageState({this.image, this.hasError = false});
+  ProfileState({this.hasError = false, this.user});
 }
 
 class HomeScreenState extends StateState {

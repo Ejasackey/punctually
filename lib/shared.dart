@@ -9,7 +9,7 @@ roundedButton({context, icon, onPressed}) => SizedBox(
       height: 45,
       width: 45,
       child: TextButton(
-        onPressed: onPressed ?? () => Navigator.pop(context),
+        onPressed: onPressed ?? () => Navigator.maybePop(context),
         style: TextButton.styleFrom(
           padding: EdgeInsets.zero,
           backgroundColor: accentLight,

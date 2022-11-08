@@ -28,9 +28,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
         key: StateCubit.qrKey,
         onQRViewCreated: (controller) =>
             StateCubit.i.onQRViewCreated(controller, context),
-        overlay: QrScannerOverlayShape(
-          borderColor: primaryColor,
-        ),
+        overlay: QrScannerOverlayShape(borderColor: primaryColor),
       ),
     );
   }

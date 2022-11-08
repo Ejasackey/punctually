@@ -1,8 +1,11 @@
+import 'dart:developer';
 import 'dart:io';
 
 import "package:flutter/material.dart";
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:punctually/cubit/state_cubit.dart';
+import 'package:hive/hive.dart';
+import 'package:punctually/cubit/profile_cubit/cubit/profile_cubit.dart';
+import 'package:punctually/models/user.dart';
 import 'package:punctually/shared.dart';
 import 'package:punctually/style.dart';
 
@@ -12,64 +15,101 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
+    ProfileCubit profileCubit = context.read<ProfileCubit>();
     return Scaffold(
-        body: SingleChildScrollView(
-      child: Column(
-        children: [
-          BlocBuilder<StateCubit, StateState>(
-            bloc: StateCubit.i,
-            builder: (context, state) {
-              ProfileImageState imageState = state as ProfileImageState;
-              return Container(
-                padding: const EdgeInsets.all(25),
-                height: screenWidth,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(30),
-                  color: Colors.yellow,
-                  image: imageState.image == null
-                      ? DecorationImage(
-                          image: AssetImage("assets/profile_img.png"),
-                          fit: BoxFit.cover)
-                      : DecorationImage(
-                          image: FileImage(imageState.image!),
-                          fit: BoxFit.cover,
-                        ),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    SafeArea(
-                      child: Align(
-                        alignment: Alignment.topLeft,
-                        child: roundedButton(context: context),
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.bottomRight,
-                      child: roundedButton(
-                        context: context,
-                        icon: const Icon(Icons.edit_rounded),
-                        onPressed: StateCubit.i.getImage,
-                      ),
-                    )
-                  ],
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 20),
-          textField(label: "Name", value: "First Name and Last Name"),
-          const SizedBox(height: 15),
-          textField(label: "Portfolio", value: "Managing Director"),
-          const SizedBox(height: 15),
-          textField(label: "Department", value: "Finance"),
-        ],
+      body: SingleChildScrollView(
+        child: BlocBuilder<ProfileCubit, ProfileState>(
+          bloc: profileCubit,
+          builder: (context, state) {
+            User user = (state as ProfileLoaded).user;
+            return WillPopScope(
+              onWillPop: () async {
+                profileCubit.saveProfileDetails(state.user);
+                return Future.value(true);
+              },
+              child: Column(
+                children: [
+                  profileImg(
+                    screenWidth,
+                    context,
+                    profileCubit,
+                    user.profileUrl,
+                  ),
+                  const SizedBox(height: 20),
+                  textField(
+                    onchanged: (val) {
+                      user.name = val;
+                    },
+                    label: "Name",
+                    value: user.name,
+                  ),
+                  const SizedBox(height: 15),
+                  textField(
+                    onchanged: (val) => user.portfolio = val,
+                    label: "Portfolio",
+                    value: user.portfolio,
+                  ),
+                  const SizedBox(height: 15),
+                  textField(
+                    onchanged: (val) => user.department = val,
+                    label: "Department",
+                    value: user.department,
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
-    ));
+    );
   }
 
-  Container textField({String label = "", String value = ""}) {
+  Widget profileImg(
+    double screenWidth,
+    BuildContext context,
+    ProfileCubit profileCubit,
+    String profileUrl,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(25),
+      height: screenWidth,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(30),
+        color: Colors.yellow,
+        image: profileUrl.isNotEmpty
+            ? DecorationImage(
+                image: FileImage(
+                  File(profileUrl),
+                ),
+                fit: BoxFit.cover,
+              )
+            : DecorationImage(
+                image: AssetImage("assets/profile_img.png"), fit: BoxFit.cover),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          SafeArea(
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: roundedButton(context: context),
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomRight,
+            child: roundedButton(
+              context: context,
+              icon: const Icon(Icons.edit_rounded),
+              onPressed: profileCubit.saveProfileImage,
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Container textField({String label = "", String value = "", onchanged}) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 15),
       margin: EdgeInsets.symmetric(horizontal: 15),
@@ -78,6 +118,8 @@ class ProfileScreen extends StatelessWidget {
         color: primaryColorLight.withOpacity(.6),
       ),
       child: TextFormField(
+        textCapitalization: TextCapitalization.sentences,
+        onChanged: onchanged,
         initialValue: value,
         style: TextStyle(
             fontSize: 18,
