@@ -1,7 +1,12 @@
+import 'dart:developer';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:punctually/cubit/state_cubit.dart';
+import 'package:punctually/cubit/month_cubit/cubit/month_cubit.dart';
+import 'package:punctually/cubit/profile_cubit/cubit/profile_cubit.dart';
+import 'package:punctually/cubit/qr_cubit/qr_cubit.dart';
+import 'package:punctually/models/month.dart';
+import 'package:punctually/models/user.dart';
 import 'package:punctually/screens/profile.dart';
 import 'package:punctually/screens/report.dart';
 import 'package:punctually/shared.dart';
@@ -12,14 +17,15 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    ProfileCubit profileCubit = BlocProvider.of<ProfileCubit>(context);
+    QRCubit _qrCubit = context.read<QRCubit>();
     return Scaffold(
       backgroundColor: Colors.white,
-      body: BlocListener<StateCubit, StateState>(
-        bloc: StateCubit.i,
-        listenWhen: (previous, current) => current is HomeScreenState,
+      body: BlocListener<QRCubit, bool?>(
+        bloc: _qrCubit,
         listener: (context, state) {
-          if (state is HomeScreenState) {
-            scanStatusDialog(context, state.scanStatus);
+          if (state != null) {
+            scanStatusDialog(context, state);
           }
         },
         child: Stack(
@@ -31,19 +37,21 @@ class HomeScreen extends StatelessWidget {
                     horizontal: 15.0, vertical: 15.0),
                 child: Column(
                   children: [
-                    profileSection(context),
+                    profileSection(profileCubit),
                     const SizedBox(height: 20),
                     Expanded(
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(22),
                         child: ListView.builder(
                           padding: const EdgeInsets.symmetric(vertical: 10),
-                          itemBuilder: (context, index) => monthCard(context),
+                          itemCount: Month.months.length,
+                          itemBuilder: (context, index) =>
+                              monthCard(context, Month.months[index]),
                         ),
                       ),
                     ),
                     const SizedBox(height: 10),
-                    scanButton(context)
+                    scanButton(_qrCubit, context)
                   ],
                 ),
               ),
@@ -101,7 +109,7 @@ class HomeScreen extends StatelessWidget {
   }
 
   // Month Card Widget:---------------------------------------------------------------------
-  Widget monthCard(context) {
+  Widget monthCard(context, Month month) {
     return GestureDetector(
       onTap: () {
         navTo(context, ReportScreen());
@@ -126,7 +134,9 @@ class HomeScreen extends StatelessWidget {
           children: [
             SizedBox(width: 15),
             Text(
-              "This Month",
+              MonthCubit.getMonthName(month.date.month),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -139,7 +149,7 @@ class HomeScreen extends StatelessWidget {
                 child: Stack(
                   children: [
                     LinearProgressIndicator(
-                      value: .6,
+                      value: MonthCubit.getPercentage(month),
                       minHeight: double.infinity,
                       backgroundColor: primaryColorLight,
                     ),
@@ -148,7 +158,7 @@ class HomeScreen extends StatelessWidget {
                       child: Align(
                         alignment: Alignment.centerRight,
                         child: Text(
-                          "63%",
+                          "${(MonthCubit.getPercentage(month) * 100).ceil()}%",
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -168,11 +178,11 @@ class HomeScreen extends StatelessWidget {
   }
 
   // Scan Button Widget:---------------------------------------------------------------------
-  SizedBox scanButton(context) {
+  SizedBox scanButton(QRCubit _qrCubit, context) {
     return SizedBox(
       width: 250,
       child: ElevatedButton(
-        onPressed: () => StateCubit.i.scanQR(context),
+        onPressed: () => _qrCubit.scanQR(context),
         style: ElevatedButton.styleFrom(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
@@ -197,76 +207,77 @@ class HomeScreen extends StatelessWidget {
   }
 
   // Profile Section Widget:---------------------------------------------------------------------
-  Widget profileSection(context) {
+  Widget profileSection(profileCubit) {
     return Container(
       margin: const EdgeInsets.only(top: 15),
       width: double.infinity,
-      // color: Colors.red,
-      child: Row(
-        children: [
-          BlocBuilder<StateCubit, StateState>(
-            bloc: StateCubit.i,
-            buildWhen: (prev, cur) => cur is ProfileState,
-            builder: (context, state) {
-              return Container(
+      child: BlocBuilder<ProfileCubit, ProfileState>(
+        builder: (context, state) {
+          User user = (state as ProfileLoaded).user;
+          return Row(
+            children: [
+              Container(
                 height: 130,
                 width: 130,
                 decoration: BoxDecoration(
                   color: Colors.yellow,
                   borderRadius: BorderRadius.circular(20),
-                  image:
-                      state is ProfileState && state.user!.profileUrl.isNotEmpty
-                          ? DecorationImage(
-                              image: FileImage(
-                                File(state.user!.profileUrl!),
-                              ),
-                              fit: BoxFit.cover,
-                            )
-                          : DecorationImage(
-                              image: AssetImage("assets/profile_img.png"),
-                              fit: BoxFit.cover,
-                            ),
-                ),
-              );
-            },
-          ),
-          SizedBox(width: 20),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Abigail Mensah",
-                style: TextStyle(
-                  fontSize: 23,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  image: user.profileUrl.isNotEmpty
+                      ? DecorationImage(
+                          image: FileImage(
+                            File(state.user.profileUrl),
+                          ),
+                          fit: BoxFit.cover,
+                        )
+                      : DecorationImage(
+                          image: AssetImage("assets/profile_img.png"),
+                          fit: BoxFit.cover,
+                        ),
                 ),
               ),
-              SizedBox(height: 5),
-              Text(
-                "Ambassador",
-                style: TextStyle(
-                    fontSize: 16, color: Colors.white.withOpacity(.9)),
-              ),
-              ElevatedButton(
-                onPressed: () => navTo(context, ProfileScreen()),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(7),
-                  ),
-                ),
-                child: Text(
-                  "Edit profile",
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 12,
-                  ),
+              SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      user.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 23,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 5),
+                    Text(
+                      user.portfolio,
+                      style: TextStyle(
+                          fontSize: 16, color: Colors.white.withOpacity(.9)),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => navTo(context, ProfileScreen()),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(7),
+                        ),
+                      ),
+                      child: Text(
+                        "Edit profile",
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 12,
+                        ),
+                      ),
+                    )
+                  ],
                 ),
               )
             ],
-          )
-        ],
+          );
+        },
       ),
     );
   }

@@ -24,7 +24,7 @@ class ProfileScreen extends StatelessWidget {
             User user = (state as ProfileLoaded).user;
             return WillPopScope(
               onWillPop: () async {
-                profileCubit.saveProfileDetails(state.user);
+                await profileCubit.getProfile();
                 return Future.value(true);
               },
               child: Column(
@@ -37,21 +37,19 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   textField(
-                    onchanged: (val) {
-                      user.name = val;
-                    },
+                    onchanged: profileCubit.saveName,
                     label: "Name",
                     value: user.name,
                   ),
                   const SizedBox(height: 15),
                   textField(
-                    onchanged: (val) => user.portfolio = val,
+                    onchanged: profileCubit.savePortfolio,
                     label: "Portfolio",
                     value: user.portfolio,
                   ),
                   const SizedBox(height: 15),
                   textField(
-                    onchanged: (val) => user.department = val,
+                    onchanged: profileCubit.saveDepartment,
                     label: "Department",
                     value: user.department,
                   ),
@@ -85,7 +83,9 @@ class ProfileScreen extends StatelessWidget {
                 fit: BoxFit.cover,
               )
             : DecorationImage(
-                image: AssetImage("assets/profile_img.png"), fit: BoxFit.cover),
+                image: AssetImage("assets/profile_img.png"),
+                fit: BoxFit.cover,
+              ),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,

@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
-import 'package:punctually/cubit/state_cubit.dart';
+import 'package:punctually/cubit/month_cubit/cubit/month_cubit.dart';
+import 'package:punctually/cubit/qr_cubit/qr_cubit.dart';
 import 'package:punctually/main.dart';
 import 'package:punctually/models/month.dart';
 import 'package:punctually/shared.dart';
@@ -38,101 +39,94 @@ class ReportScreen extends StatelessWidget {
 
   Container calendar(double screenWidth) {
     return Container(
-        height: screenWidth * 1.03,
-        width: double.infinity,
-        clipBehavior: Clip.hardEdge,
-        decoration: BoxDecoration(
-          color: accentLight,
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: Column(
-          children: [
-            SizedBox(
-              width: double.infinity,
-              height: 60,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  day("Mon"),
-                  day("Tue"),
-                  day("Wed"),
-                  day("Thu"),
-                  day("Fri"),
-                ],
-              ),
+      height: screenWidth * 1.03,
+      width: double.infinity,
+      clipBehavior: Clip.hardEdge,
+      decoration: BoxDecoration(
+        color: accentLight,
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: Column(
+        children: [
+          SizedBox(
+            width: double.infinity,
+            height: 60,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                day("Mon"),
+                day("Tue"),
+                day("Wed"),
+                day("Thu"),
+                day("Fri"),
+              ],
             ),
-            Expanded(
-              child: GridView.count(
-                padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
-                crossAxisCount: 5,
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 20,
-                primary: false,
-                children: [
-                  ...List.generate(
-                      StateCubit.i
-                              .getMonthDetailData()
-                              .days
-                              .keys
-                              .first
-                              .weekday -
-                          1,
-                      (index) => Container()),
-                  ...StateCubit.i
-                      .getMonthDetailData()
-                      .days
-                      .entries
-                      .map(
-                        (map) => Container(
-                          alignment: Alignment.center,
-                          height: 40,
-                          width: 40,
-                          decoration: BoxDecoration(
-                            color:
-                                map.value ? primaryColor : Colors.transparent,
-                            borderRadius: BorderRadius.circular(18),
-                            border: map.value
-                                ? Border.all(color: Colors.transparent)
-                                : Border.all(color: primaryColor, width: 2),
-                          ),
-                          child: Text(
-                            map.key.day.toString(),
-                            style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                              fontSize: 16,
-                              color: map.value ? Colors.white : primaryColor,
-                            ),
+          ),
+          Expanded(
+            child: GridView.count(
+              padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
+              crossAxisCount: 5,
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 20,
+              primary: false,
+              children: [
+                ...List.generate(
+                    MonthCubit.getMonthDetailData().days.keys.first.weekday - 1,
+                    (index) => Container()),
+                ...MonthCubit.getMonthDetailData()
+                    .days
+                    .entries
+                    .map(
+                      (map) => Container(
+                        alignment: Alignment.center,
+                        height: 40,
+                        width: 40,
+                        decoration: BoxDecoration(
+                          color: map.value ? primaryColor : Colors.transparent,
+                          borderRadius: BorderRadius.circular(18),
+                          border: map.value
+                              ? Border.all(color: Colors.transparent)
+                              : Border.all(color: primaryColor, width: 2),
+                        ),
+                        child: Text(
+                          map.key.day.toString(),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 16,
+                            color: map.value ? Colors.white : primaryColor,
                           ),
                         ),
-                      )
-                      .toList(),
-                  // ...List.generate(25, (index) => index + 1)
-                  //     .map(
-                  //       (e) => Container(
-                  //         alignment: Alignment.center,
-                  //         height: 40,
-                  //         width: 40,
-                  //         decoration: BoxDecoration(
-                  //           color: primaryColor,
-                  //           borderRadius: BorderRadius.circular(18),
-                  //         ),
-                  //         child: Text(
-                  //           e.toString(),
-                  //           style: const TextStyle(
-                  //             fontWeight: FontWeight.w500,
-                  //             fontSize: 16,
-                  //             color: Colors.white,
-                  //           ),
-                  //         ),
-                  //       ),
-                  //     )
-                  //     .toList(),
-                ],
-              ),
-            )
-          ],
-        ));
+                      ),
+                    )
+                    .toList(),
+                // ...List.generate(25, (index) => index + 1)
+                //     .map(
+                //       (e) => Container(
+                //         alignment: Alignment.center,
+                //         height: 40,
+                //         width: 40,
+                //         decoration: BoxDecoration(
+                //           color: primaryColor,
+                //           borderRadius: BorderRadius.circular(18),
+                //         ),
+                //         child: Text(
+                //           e.toString(),
+                //           style: const TextStyle(
+                //             fontWeight: FontWeight.w500,
+                //             fontSize: 16,
+                //             color: Colors.white,
+                //           ),
+                //         ),
+                //       ),
+                //     )
+                //     .toList(),
+              ],
+            ),
+          )
+        ],
+      ),
+    );
   }
 
   Widget day(day) {
@@ -159,8 +153,7 @@ class ReportScreen extends StatelessWidget {
         child: Stack(
           children: [
             LinearProgressIndicator(
-              value:
-                  StateCubit.i.getPercentage(StateCubit.i.getMonthDetailData()),
+              value: MonthCubit.getPercentage(MonthCubit.getMonthDetailData()),
               minHeight: double.infinity,
               backgroundColor: primaryColorLight,
             ),
@@ -169,7 +162,7 @@ class ReportScreen extends StatelessWidget {
               child: Align(
                 alignment: Alignment.centerRight,
                 child: Text(
-                  "${(StateCubit.i.getPercentage(StateCubit.i.getMonthDetailData()) * 100).ceil()}%",
+                  "${(MonthCubit.getPercentage(MonthCubit.getMonthDetailData()) * 100).ceil()}%",
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,

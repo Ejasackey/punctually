@@ -34,10 +34,13 @@ class ProfileCubit extends Cubit<ProfileState> {
     }
   }
 
-  saveProfileDetails(User user) async {
-    profileBox.put(_nameKey, user.name);
-    profileBox.put(_departmentKey, user.department);
-    profileBox.put(_portfolioKey, user.portfolio);
-    getProfile();
+  saveName(String name) {
+    profileBox.put(_nameKey, name);
+  }
+  savePortfolio(String portfolio) {
+    profileBox.put(_portfolioKey, portfolio);
+  }
+  saveDepartment(String department) {
+    profileBox.put(_departmentKey, department);
   }
 }
