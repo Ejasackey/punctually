@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:punctually/cubit/month_cubit/cubit/month_cubit.dart';
@@ -19,12 +20,16 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     ProfileCubit profileCubit = BlocProvider.of<ProfileCubit>(context);
     QRCubit _qrCubit = context.read<QRCubit>();
+    MonthCubit _monthCubit = context.read<MonthCubit>();
     return Scaffold(
       backgroundColor: Colors.white,
       body: BlocListener<QRCubit, bool?>(
         bloc: _qrCubit,
         listener: (context, state) {
           if (state != null) {
+            if (state) {
+              _monthCubit.registerAttendance();
+            }
             scanStatusDialog(context, state);
           }
         },
@@ -42,11 +47,24 @@ class HomeScreen extends StatelessWidget {
                     Expanded(
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(22),
-                        child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          itemCount: Month.months.length,
-                          itemBuilder: (context, index) =>
-                              monthCard(context, Month.months[index]),
+                        child: BlocBuilder<MonthCubit, List>(
+                          bloc: _monthCubit,
+                          builder: (context, monthData) {
+                            if (monthData.isEmpty) {
+                              return const Center(
+                                child: Text("No month data"),
+                              );
+                            } else {
+                              return ListView.builder(
+                                physics: BouncingScrollPhysics(),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 10),
+                                itemCount: monthData.length,
+                                itemBuilder: (context, index) =>
+                                    monthCard(context, monthData[index]),
+                              );
+                            }
+                          },
                         ),
                       ),
                     ),
@@ -112,7 +130,7 @@ class HomeScreen extends StatelessWidget {
   Widget monthCard(context, Month month) {
     return GestureDetector(
       onTap: () {
-        navTo(context, ReportScreen());
+        navTo(context, ReportScreen(month: month));
       },
       child: Container(
         height: 70,
@@ -132,7 +150,7 @@ class HomeScreen extends StatelessWidget {
         margin: EdgeInsets.only(bottom: 10),
         child: Row(
           children: [
-            SizedBox(width: 15),
+            const SizedBox(width: 15),
             Text(
               MonthCubit.getMonthName(month.date.month),
               maxLines: 1,
@@ -235,13 +253,13 @@ class HomeScreen extends StatelessWidget {
                         ),
                 ),
               ),
-              SizedBox(width: 20),
+              const SizedBox(width: 20),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      user.name,
+                      user.name.isNotEmpty ? user.name : "Employee name",
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -250,12 +268,12 @@ class HomeScreen extends StatelessWidget {
                         color: Colors.white,
                       ),
                     ),
-                    SizedBox(height: 5),
                     Text(
-                      user.portfolio,
+                      user.portfolio.isNotEmpty ? user.portfolio : "portfolio",
                       style: TextStyle(
                           fontSize: 16, color: Colors.white.withOpacity(.9)),
                     ),
+                    const SizedBox(height: 5),
                     ElevatedButton(
                       onPressed: () => navTo(context, ProfileScreen()),
                       style: ElevatedButton.styleFrom(

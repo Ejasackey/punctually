@@ -7,7 +7,8 @@ import 'package:punctually/shared.dart';
 import 'package:punctually/style.dart';
 
 class ReportScreen extends StatelessWidget {
-  const ReportScreen({super.key});
+  final Month month;
+  const ReportScreen({super.key, required this.month});
 
   @override
   Widget build(BuildContext context) {
@@ -21,9 +22,9 @@ class ReportScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 appBar(context),
-                SizedBox(height: 40),
+                const SizedBox(height: 40),
                 _legend,
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 calendar(screenWidth),
                 const SizedBox(height: 30),
                 performance,
@@ -37,6 +38,7 @@ class ReportScreen extends StatelessWidget {
     );
   }
 
+  //-----------------------------------------------------------------------------------------
   Container calendar(double screenWidth) {
     return Container(
       height: screenWidth * 1.03,
@@ -72,9 +74,14 @@ class ReportScreen extends StatelessWidget {
               primary: false,
               children: [
                 ...List.generate(
-                    MonthCubit.getMonthDetailData().days.keys.first.weekday - 1,
+                    MonthCubit.getMonthDetailData(month)
+                            .days
+                            .keys
+                            .first
+                            .weekday -
+                        1,
                     (index) => Container()),
-                ...MonthCubit.getMonthDetailData()
+                ...MonthCubit.getMonthDetailData(month)
                     .days
                     .entries
                     .map(
@@ -100,27 +107,6 @@ class ReportScreen extends StatelessWidget {
                       ),
                     )
                     .toList(),
-                // ...List.generate(25, (index) => index + 1)
-                //     .map(
-                //       (e) => Container(
-                //         alignment: Alignment.center,
-                //         height: 40,
-                //         width: 40,
-                //         decoration: BoxDecoration(
-                //           color: primaryColor,
-                //           borderRadius: BorderRadius.circular(18),
-                //         ),
-                //         child: Text(
-                //           e.toString(),
-                //           style: const TextStyle(
-                //             fontWeight: FontWeight.w500,
-                //             fontSize: 16,
-                //             color: Colors.white,
-                //           ),
-                //         ),
-                //       ),
-                //     )
-                //     .toList(),
               ],
             ),
           )
@@ -129,6 +115,7 @@ class ReportScreen extends StatelessWidget {
     );
   }
 
+  //-----------------------------------------------------------------------------------------
   Widget day(day) {
     return Expanded(
       child: Align(
@@ -144,6 +131,7 @@ class ReportScreen extends StatelessWidget {
     );
   }
 
+  //-----------------------------------------------------------------------------------------
   Container percentage() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -153,7 +141,8 @@ class ReportScreen extends StatelessWidget {
         child: Stack(
           children: [
             LinearProgressIndicator(
-              value: MonthCubit.getPercentage(MonthCubit.getMonthDetailData()),
+              value: MonthCubit.getPercentage(
+                  MonthCubit.getMonthDetailData(month)),
               minHeight: double.infinity,
               backgroundColor: primaryColorLight,
             ),
@@ -162,7 +151,7 @@ class ReportScreen extends StatelessWidget {
               child: Align(
                 alignment: Alignment.centerRight,
                 child: Text(
-                  "${(MonthCubit.getPercentage(MonthCubit.getMonthDetailData()) * 100).ceil()}%",
+                  "${(MonthCubit.getPercentage(MonthCubit.getMonthDetailData(month)) * 100).ceil()}%",
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -177,6 +166,7 @@ class ReportScreen extends StatelessWidget {
     );
   }
 
+  //-----------------------------------------------------------------------------------------
   static final Padding performance = Padding(
     padding: const EdgeInsets.symmetric(horizontal: 15.0),
     child: Text(
@@ -189,8 +179,8 @@ class ReportScreen extends StatelessWidget {
     ),
   );
 
+  //-----------------------------------------------------------------------------------------
   Widget appBar(context) {
-    String monthName = Month.thisMonth.date.month.toString();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15),
       child: Row(
@@ -198,7 +188,7 @@ class ReportScreen extends StatelessWidget {
           roundedButton(context: context),
           const SizedBox(width: 30),
           Text(
-            "$monthName Report",
+            "${MonthCubit.getMonthName(month.date.month)} Report",
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.w600,
@@ -210,6 +200,7 @@ class ReportScreen extends StatelessWidget {
     );
   }
 
+  //-----------------------------------------------------------------------------------------
   static final Widget _legend = Padding(
     padding: const EdgeInsets.symmetric(horizontal: 15),
     child: Row(

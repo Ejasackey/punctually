@@ -1,29 +1,92 @@
 import 'package:bloc/bloc.dart';
+import 'package:flutter/material.dart';
+import 'package:hive_flutter/adapters.dart';
 import 'package:meta/meta.dart';
 import 'package:punctually/models/month.dart';
 
 part 'month_state.dart';
 
-class MonthCubit extends Cubit<MonthState> {
-  MonthCubit() : super(MonthInitial());
+class MonthCubit extends Cubit<List<Month>> {
+  MonthCubit({required this.monthBox}) : super([]) {
+    getMonths();
+  }
+  Box<Month> monthBox;
 
   getMonths() {
-    return Month.months;
+    List<Month> months = monthBox.values.toList();
+    emit(months);
   }
 
-  static Month getMonthDetailData([Month? month]) {
-    (month ?? Month.thisMonth).days.removeWhere((key, value) {
+  static Month getMonthDetailData(Month month) {
+    month.days.removeWhere((key, value) {
       return key.weekday == 6 || key.weekday == 7;
     });
-
-    return Month.thisMonth;
+    return month;
   }
 
+  // ----------------------------------------------------------------------------------------
+  registerAttendance() {
+    // get today's date
+    DateTime thisDate = DateTime.now();
+    try {
+      // check and get this month in the database
+      // update month data
+      updateMonthData(thisDate);
+      getMonths();
+    } catch (e) {
+      //if month doesn't already exist in database, create and save it.
+      int daysInMonth = DateTime(thisDate.year, thisDate.month + 1, 0).day;
+      Map<DateTime, bool> days = {};
+      for (int i = 0; i < daysInMonth; i++) {
+        days.addAll({
+          DateTime(thisDate.year, thisDate.month).add(Duration(days: i)): false
+        });
+      }
+      days[DateTime(thisDate.year, thisDate.month, thisDate.day)] = true;
+      Month thisMonth =
+          Month(date: DateTime(thisDate.year, thisDate.month), days: days);
+      monthBox.add(thisMonth);
+      getMonths();
+    }
+    // check if a month object of that date already extits
+    // if so, change this day in the days to true
+    // if not, create month object, with this date
+    // change this day to rue
+  }
+
+  // ----------------------------------------------------------------------------------------
+  updateMonthData(thisDate) {
+    Month thisMonth = monthBox.values.singleWhere((month) =>
+        DateTime(
+          month.date.year,
+          month.date.month,
+        ) ==
+        DateTime(
+          thisDate.year,
+          thisDate.month,
+        ));
+    // if this month exists, change today's value to true
+
+    for (DateTime day in thisMonth.days.keys) {
+      if (day == DateTime(thisDate.year, thisDate.month, thisDate.day)) {
+        thisMonth.days[day] = true;
+        thisMonth.save();
+        break;
+      }
+    }
+  }
+
+  // ----------------------------------------------------------------------------------------
   static double getPercentage(Month month) {
-    int att = getMonthDetailData(month).days.values.where((value) => value == true).length;
+    int att = getMonthDetailData(month)
+        .days
+        .values
+        .where((value) => value == true)
+        .length;
     return (att / month.days.values.length);
   }
 
+  // ----------------------------------------------------------------------------------------
   static getMonthName(int month) {
     switch (month) {
       case 1:
