@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "462286458333",
+    "project_id": "punctually-92e89",
+    "storage_bucket": "punctually-92e89.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:462286458333:android:b854b5efe42bcbe8f27a34",
+        "android_client_info": {
+          "package_name": "com.ejastechnologies.punctually"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "462286458333-ejo26kb33u1q4fgndd4o0689k119fi24.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCslJh0tuHBwTX2dpOhxVAzoND_DrYHZSE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "462286458333-ejo26kb33u1q4fgndd4o0689k119fi24.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

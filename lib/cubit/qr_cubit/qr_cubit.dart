@@ -3,20 +3,35 @@ import 'dart:io';
 
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
-import 'package:meta/meta.dart';
+import 'package:hive/hive.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:punctually/screens/qr_scan.dart';
-import 'package:punctually/shared.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 
 part 'qr_state.dart';
 
 class QRCubit extends Cubit<bool?> {
-  QRCubit() : super(null);
+  Box<DateTime> scanStatBox;
+  QRCubit({required this.scanStatBox}) : super(null) {
+    // if scanned and it's still today. emit true
+    DateTime lastScanDate = scanStatBox.get(
+      "status",
+      defaultValue: DateTime.now().subtract(Duration(days: 1)),
+    )!;
+
+    log(lastScanDate.toString());
+
+    if (lastScanDate.day == DateTime.now().day) {
+      //Already scanned today.
+      emit(true);
+    }
+
+    // if scanned and it's was yesterday emit null
+    // if not scanned and it's still today, emit null;
+  }
 
   final GlobalKey qrKey = GlobalKey(debugLabel: "QR");
   Barcode? result;
-  QRViewController? _qrController;
+  QRViewController? qrController;
 
   Future<PermissionStatus> _getCameraPermission() async {
     var status = await Permission.camera.status;
@@ -29,32 +44,42 @@ class QRCubit extends Cubit<bool?> {
 
   reassemble() {
     if (Platform.isAndroid) {
-      _qrController!.pauseCamera();
+      qrController!.pauseCamera();
     } else if (Platform.isIOS) {
-      _qrController!.resumeCamera();
+      qrController!.resumeCamera();
     }
   }
 
-  onQRViewCreated(QRViewController controller, context) {
-    this._qrController = controller;
-    controller.scannedDataStream.listen((scanData) {
-      log(scanData.code!);
-      controller.stopCamera();
-      controller.dispose();
-      Navigator.of(context).pop(true);
-    });
+  onQRViewCreated(QRViewController controller, context) async {
+    qrController = controller;
+    PermissionStatus status = await _getCameraPermission();
+    if (status.isGranted) {
+      controller.scannedDataStream.listen((scanData) {
+        emit(null);
+        log(scanData.code!);
+        controller.pauseCamera();
+        if (scanData.code! == "I Love You") {
+          scanStatBox.put("status", DateTime.now());
+          emit(true);
+        } else {
+          emit(false);
+        }
+      });
+    }
   }
 
   scanQR(context) async {
-    emit(null);
-    PermissionStatus status = await _getCameraPermission();
-    if (status.isGranted) {
-      bool success = await navTo(context, QRScannerScreen());
-      emit(success);
-    }
+    // emit(null);
+    // PermissionStatus status = await _getCameraPermission();
+    // if (status.isGranted) {
+    //   bool success = await navTo(context, QRScannerScreen());
+    //   emit(success);
+    // }
   }
 
-  
-
-  
+  @override
+  Future<void> close() {
+    qrController!.dispose();
+    return super.close();
+  }
 }

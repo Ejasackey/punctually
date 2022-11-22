@@ -12,6 +12,7 @@ import 'package:punctually/screens/profile.dart';
 import 'package:punctually/screens/report.dart';
 import 'package:punctually/shared.dart';
 import 'package:punctually/style.dart';
+import 'package:qr_code_scanner/qr_code_scanner.dart';
 
 class HomeScreen extends StatelessWidget {
   HomeScreen({super.key});
@@ -25,103 +26,134 @@ class HomeScreen extends StatelessWidget {
       backgroundColor: Colors.white,
       body: BlocListener<QRCubit, bool?>(
         bloc: _qrCubit,
-        listener: (context, state) {
-          if (state != null) {
-            if (state) {
-              _monthCubit.registerAttendance();
-            }
-            scanStatusDialog(context, state);
+        listenWhen: (prev, cur) {
+          //only invoke listen callback when current state is false.
+          if (cur == null || cur) {
+            return false;
+          } else {
+            return true;
           }
         },
-        child: Stack(
-          children: [
-            upperColor,
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 15.0, vertical: 15.0),
-                child: Column(
-                  children: [
-                    profileSection(profileCubit),
-                    const SizedBox(height: 20),
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(22),
-                        child: BlocBuilder<MonthCubit, List>(
-                          bloc: _monthCubit,
-                          builder: (context, monthData) {
-                            if (monthData.isEmpty) {
-                              return const Center(
-                                child: Text("No month data"),
-                              );
-                            } else {
-                              return ListView.builder(
-                                physics: BouncingScrollPhysics(),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 10),
-                                itemCount: monthData.length,
-                                itemBuilder: (context, index) =>
-                                    monthCard(context, monthData[index]),
-                              );
-                            }
-                          },
+        listener: (context, state) async {
+          await showScanStatus(context, state);
+          _qrCubit.qrController!.resumeCamera();
+        },
+        child: SafeArea(
+          child: Column(
+            children: [
+              profileSection(profileCubit),
+              const SizedBox(height: 20),
+              // Expanded(
+              //   child: ClipRRect(
+              //     borderRadius: BorderRadius.circular(22),
+              //     child: BlocBuilder<MonthCubit, List>(
+              //       bloc: _monthCubit,
+              //       builder: (context, monthData) {
+              //         if (monthData.isEmpty) {
+              //           return const Center(
+              //             child: Text("No month data"),
+              //           );
+              //         } else {
+              //           return ListView.builder(
+              //             physics: BouncingScrollPhysics(),
+              //             padding:
+              //                 const EdgeInsets.symmetric(vertical: 10),
+              //             itemCount: monthData.length,
+              //             itemBuilder: (context, index) =>
+              //                 monthCard(context, monthData[index]),
+              //           );
+              //         }
+              //       },
+              //     ),
+              //   ),
+              // ),
+              const SizedBox(height: 50),
+              BlocBuilder<QRCubit, bool?>(
+                builder: (context, state) {
+                  if (state == null || !state) {
+                    return SizedBox(
+                      height: 300,
+                      width: 300,
+                      child: QRView(
+                        key: _qrCubit.qrKey,
+                        onQRViewCreated: (controller) =>
+                            _qrCubit.onQRViewCreated(controller, context),
+                        overlay: QrScannerOverlayShape(
+                          borderColor: primaryColor,
+                          cutOutHeight: 290,
+                          cutOutWidth: 290,
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    scanButton(_qrCubit, context)
-                  ],
-                ),
+                    );
+                  } else {
+                    return Container(
+                      width: 300,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                              color: Colors.black.withOpacity(.07),
+                              offset: Offset(1, 1),
+                              blurRadius: 15)
+                        ],
+                      ),
+                      child: statusDialog(state),
+                    );
+                  }
+                },
               ),
-            )
-          ],
+              // scanButton(_qrCubit, context)
+            ],
+          ),
         ),
       ),
     );
   }
 
   // Scan Status Dialog Widget:---------------------------------------------------------------------
-  scanStatusDialog(context, success) {
+  Future showScanStatus(context, success) {
     return showDialog(
       context: context,
       builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: SizedBox(
-          width: double.infinity,
-          height: 350,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircleAvatar(
-                radius: 80,
-                backgroundColor:
-                    success ? Color(0xFFE0FFE9) : Colors.red.withOpacity(.1),
-                child: Icon(
-                  success ? Icons.check_rounded : Icons.clear_rounded,
-                  size: 80,
-                  color: success ? Color(0xFF04A932) : Colors.redAccent,
-                ),
-              ),
-              SizedBox(height: 30),
-              Text(
-                success ? "Success" : "Invalid Code",
-                style: TextStyle(
-                  fontSize: 23,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black.withOpacity(.75),
-                ),
-              ),
-              SizedBox(height: 20),
-              if (success)
-                Text(
-                  "Checked in today",
-                  style: TextStyle(color: Colors.grey[600]),
-                )
-            ],
+        child: statusDialog(success),
+      ),
+    );
+  }
+
+  //---------------------------------------------------------------------------------
+  SizedBox statusDialog(success) {
+    return SizedBox(
+      width: double.infinity,
+      height: 350,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircleAvatar(
+            radius: 80,
+            backgroundColor:
+                success ? Color(0xFFE0FFE9) : Colors.red.withOpacity(.1),
+            child: Icon(
+              success ? Icons.check_rounded : Icons.clear_rounded,
+              size: 80,
+              color: success ? Color(0xFF04A932) : Colors.redAccent,
+            ),
           ),
-        ),
+          SizedBox(height: 30),
+          Text(
+            success ? "Success" : "Invalid Code",
+            style: TextStyle(
+              fontSize: 23,
+              fontWeight: FontWeight.bold,
+              color: Colors.black.withOpacity(.75),
+            ),
+          ),
+          SizedBox(height: 20),
+          if (success)
+            Text(
+              "Checked in today",
+              style: TextStyle(color: Colors.grey[600]),
+            )
+        ],
       ),
     );
   }
@@ -227,8 +259,10 @@ class HomeScreen extends StatelessWidget {
   // Profile Section Widget:---------------------------------------------------------------------
   Widget profileSection(profileCubit) {
     return Container(
-      margin: const EdgeInsets.only(top: 15),
+      // margin: const EdgeInsets.only(top: 15),
+      padding: EdgeInsets.symmetric(vertical: 30, horizontal: 20),
       width: double.infinity,
+      color: primaryColor,
       child: BlocBuilder<ProfileCubit, ProfileState>(
         builder: (context, state) {
           User user = (state as ProfileLoaded).user;
@@ -239,7 +273,7 @@ class HomeScreen extends StatelessWidget {
                 width: 130,
                 decoration: BoxDecoration(
                   color: Colors.yellow,
-                  borderRadius: BorderRadius.circular(20),
+                  // borderRadius: BorderRadius.circular(20),
                   image: user.profileUrl.isNotEmpty
                       ? DecorationImage(
                           image: FileImage(
@@ -274,22 +308,22 @@ class HomeScreen extends StatelessWidget {
                           fontSize: 16, color: Colors.white.withOpacity(.9)),
                     ),
                     const SizedBox(height: 5),
-                    ElevatedButton(
-                      onPressed: () => navTo(context, ProfileScreen()),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(7),
-                        ),
-                      ),
-                      child: Text(
-                        "Edit profile",
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 12,
-                        ),
-                      ),
-                    )
+                    // ElevatedButton( //TODO: clear this code.
+                    //   onPressed: () => navTo(context, ProfileScreen()),
+                    //   style: ElevatedButton.styleFrom(
+                    //     backgroundColor: Colors.white,
+                    //     shape: RoundedRectangleBorder(
+                    //       borderRadius: BorderRadius.circular(7),
+                    //     ),
+                    //   ),
+                    //   child: Text(
+                    //     "Edit profile",
+                    //     style: TextStyle(
+                    //       color: Colors.black,
+                    //       fontSize: 12,
+                    //     ),
+                    //   ),
+                    // )
                   ],
                 ),
               )
@@ -301,16 +335,16 @@ class HomeScreen extends StatelessWidget {
   }
 
   // Upper backgound color Widget:---------------------------------------------------------------------
-  final Column upperColor = Column(
-    children: [
-      Container(
-        height: 260,
-        width: double.infinity,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(30),
-          color: primaryColor,
-        ),
-      )
-    ],
-  );
+  // final Column upperColor = Column(
+  //   children: [
+  //     Container(
+  //       height: 260,
+  //       width: double.infinity,
+  //       decoration: BoxDecoration(
+  //         // borderRadius: BorderRadius.circular(30),
+  //         color: primaryColor,
+  //       ),
+  //     )
+  //   ],
+  // );
 }
