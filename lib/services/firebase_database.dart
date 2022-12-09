@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:punctually/models/month.dart';
 import 'package:punctually/models/org.dart';
 import 'package:punctually/models/user.dart';
 
@@ -48,8 +49,28 @@ class FirestoreService {
           .update({'days.$thisMonth': value}).timeout(
               const Duration(seconds: 10));
     } catch (e) {
-      log(e.toString(), name: "Firestore: registerAttendance");
-      throw e;
+      log("creating new month ", name: "Firestore: registerAttendane");
+      try {
+        // auto populate this month.
+        int daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+        Map<DateTime, String> days = {};
+        for (int i = 0; i < daysInMonth; i++) {
+          days.addAll(
+              {DateTime(now.year, now.month).add(Duration(days: i)): "M"});
+        }
+        days[DateTime(now.year, now.month, now.day)] = "A";
+        Month thisMonth =
+            Month(date: DateTime(now.year, now.month), days: days);
+
+        // upload to firebase
+        await _usersCollection
+          .doc(userId)
+          .collection("months").doc(thisMonth.date.toIso8601String())
+          .set(thisMonth.toMap);
+      } catch (e) {
+        log(e.toString(), name: "Firestore: registerAttendance");
+        rethrow;
+      }
     }
   }
 }
