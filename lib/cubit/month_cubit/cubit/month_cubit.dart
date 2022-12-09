@@ -1,21 +1,17 @@
+import 'dart:developer';
+
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:meta/meta.dart';
 import 'package:punctually/models/month.dart';
+import 'package:punctually/services/firebase_database.dart';
 
 part 'month_state.dart';
 
 class MonthCubit extends Cubit<List<Month>> {
-  MonthCubit({required this.monthBox}) : super([]) {
-    getMonths();
-  }
-  Box<Month> monthBox;
-
-  getMonths() {
-    List<Month> months = monthBox.values.toList();
-    emit(months);
-  }
+  FirestoreService firestoreService;
+  MonthCubit({required this.firestoreService}) : super([]);
 
   static Month getMonthDetailData(Month month) {
     month.days.removeWhere((key, value) {
@@ -25,55 +21,34 @@ class MonthCubit extends Cubit<List<Month>> {
   }
 
   // ----------------------------------------------------------------------------------------
-  registerAttendance() {
-    // get today's date
-    DateTime thisDate = DateTime.now();
+  registerAttendance(userId, value) async {
     try {
-      // check and get this month in the database
-      // update month data
-      updateMonthData(thisDate);
-      getMonths();
+      await firestoreService.registerAttendance(userId, value);
     } catch (e) {
-      //if month doesn't already exist in database, create and save it.
-      int daysInMonth = DateTime(thisDate.year, thisDate.month + 1, 0).day;
-      Map<DateTime, bool> days = {};
-      for (int i = 0; i < daysInMonth; i++) {
-        days.addAll({
-          DateTime(thisDate.year, thisDate.month).add(Duration(days: i)): false
-        });
-      }
-      days[DateTime(thisDate.year, thisDate.month, thisDate.day)] = true;
-      Month thisMonth =
-          Month(date: DateTime(thisDate.year, thisDate.month), days: days);
-      monthBox.add(thisMonth);
-      getMonths();
+      log(e.toString(), name: "Month Cubit: registerAttendance");
     }
-    // check if a month object of that date already extits
-    // if so, change this day in the days to true
-    // if not, create month object, with this date
-    // change this day to rue
   }
 
   // ----------------------------------------------------------------------------------------
   updateMonthData(thisDate) {
-    Month thisMonth = monthBox.values.singleWhere((month) =>
-        DateTime(
-          month.date.year,
-          month.date.month,
-        ) ==
-        DateTime(
-          thisDate.year,
-          thisDate.month,
-        ));
-    // if this month exists, change today's value to true
+    // Month thisMonth = monthBox.values.singleWhere((month) =>
+    //     DateTime(
+    //       month.date.year,
+    //       month.date.month,
+    //     ) ==
+    //     DateTime(
+    //       thisDate.year,
+    //       thisDate.month,
+    //     ));
+    // // if this month exists, change today's value to true
 
-    for (DateTime day in thisMonth.days.keys) {
-      if (day == DateTime(thisDate.year, thisDate.month, thisDate.day)) {
-        thisMonth.days[day] = true;
-        thisMonth.save();
-        break;
-      }
-    }
+    // for (DateTime day in thisMonth.days.keys) {
+    //   if (day == DateTime(thisDate.year, thisDate.month, thisDate.day)) {
+    //     thisMonth.days[day] = true;
+    //     thisMonth.save();
+    //     break;
+    //   }
+    // }
   }
 
   // ----------------------------------------------------------------------------------------

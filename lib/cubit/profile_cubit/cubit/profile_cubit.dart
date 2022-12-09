@@ -1,46 +1,32 @@
 import 'package:bloc/bloc.dart';
-import 'package:hive/hive.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:flutter/material.dart';
 import 'package:meta/meta.dart';
+import 'package:punctually/models/org.dart';
 import 'package:punctually/models/user.dart';
+import 'package:punctually/screens/home.dart';
+import 'package:punctually/screens/qr_screen.dart';
+import 'package:punctually/services/firebase_database.dart';
+import 'package:punctually/shared.dart';
 
 part 'profile_state.dart';
 
 class ProfileCubit extends Cubit<ProfileState> {
-  Box profileBox;
-  ProfileCubit({required this.profileBox}) : super(ProfileInitial()) {
-    getProfile();
-  }
+  FirestoreService firestoreService;
+  ProfileCubit({required this.firestoreService})
+      : super(ProfileLoaded(user: User.user));
+  static late dynamic me;
 
-  final String _nameKey = "name";
-  final String _portfolioKey = "portfolio";
-  final String _departmentKey = "department";
-  final String _profileUrlKey = "profileUrl";
-
-  getProfile() {
-    User user = User();
-    user.name = profileBox.get(_nameKey, defaultValue: "");
-    user.portfolio = profileBox.get(_portfolioKey, defaultValue: "");
-    user.department = profileBox.get(_departmentKey, defaultValue: "");
-    user.profileUrl = profileBox.get(_profileUrlKey, defaultValue: "");
-    emit(ProfileLoaded(user: user));
-  }
-
-  saveProfileImage() async {
-    XFile? image = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      profileBox.put(_profileUrlKey, image.path);
-      getProfile();
+  verifyUser(userId, context) async {
+    try {
+      me = await firestoreService.login(userId);
+      if (me is Organization) {
+        navTo(context, QRScreen(data: (me as Organization).qrCode));
+      } else {
+        navTo(context, HomeScreen());
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("User does not exist")));
     }
-  }
-
-  saveName(String name) {
-    profileBox.put(_nameKey, name);
-  }
-  savePortfolio(String portfolio) {
-    profileBox.put(_portfolioKey, portfolio);
-  }
-  saveDepartment(String department) {
-    profileBox.put(_departmentKey, department);
   }
 }

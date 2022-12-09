@@ -6,19 +6,14 @@ import 'package:punctually/cubit/month_cubit/cubit/month_cubit.dart';
 import 'package:punctually/cubit/profile_cubit/cubit/profile_cubit.dart';
 import 'package:punctually/cubit/qr_cubit/qr_cubit.dart';
 import 'package:punctually/firebase_options.dart';
-import 'package:punctually/models/month.dart';
 import 'package:punctually/screens/home.dart';
 import 'package:punctually/screens/login.dart';
-import 'package:punctually/screens/qr_screen.dart';
+import 'package:punctually/services/firebase_database.dart';
 import 'package:punctually/style.dart';
 
 void main() async {
   await Hive.initFlutter();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  Hive.registerAdapter(MonthAdapter());
-  await Hive.openBox<Month>("months");
-  await Hive.openBox("profile");
-  // await Hive.deleteBoxFromDisk("scanStat");
   await Hive.openBox<DateTime>("scanStat");
   runApp(const App());
 }
@@ -31,18 +26,18 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider<ProfileCubit>(
-            create: (context) => ProfileCubit(profileBox: Hive.box("profile"))),
         BlocProvider<QRCubit>(
           create: (context) => QRCubit(
-            scanStatBox: Hive.box<DateTime>("scanStat"),
-          ),
+              scanStatBox: Hive.box<DateTime>("scanStat"),
+              firestoreService: FirestoreService()),
         ),
         BlocProvider(
-            create: (context) => MonthCubit(monthBox: Hive.box("months")))
+            create: (context) =>
+                MonthCubit(firestoreService: FirestoreService()))
       ],
       child: MaterialApp(
         title: 'Punctually',
+        debugShowCheckedModeBanner: false,
         theme: ThemeData(
           // useMaterial3: true,
           colorScheme: ColorScheme.light(
@@ -50,7 +45,7 @@ class App extends StatelessWidget {
             secondary: accentLight,
           ),
         ),
-        home: HomeScreen(),
+        home: const LoginScreen(),
       ),
     );
   }

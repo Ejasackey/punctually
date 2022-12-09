@@ -5,17 +5,19 @@ import 'package:punctually/cubit/qr_cubit/qr_cubit.dart';
 import 'package:punctually/style.dart';
 
 class QRScreen extends StatelessWidget {
+  final String data;
+  const QRScreen({super.key, required this.data});
+
   @override
   Widget build(BuildContext context) {
     QRCubit _qrCubit = context.read<QRCubit>();
 
     return Scaffold(
-        body: Container(
-      alignment: Alignment.center,
-      padding: EdgeInsets.symmetric(horizontal: 40),
+        body: Padding(
+      padding: const EdgeInsets.all(30.0),
       child: BarcodeWidget(
         barcode: Barcode.qrCode(),
-        data: "something serious",
+        data: data,
       ),
     ));
   }

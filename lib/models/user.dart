@@ -11,6 +11,14 @@ class User {
     this.profileUrl = "",
   });
 
+  factory User.fromMap(Map<String, dynamic>? map) {
+    return User(
+      name: map!['name'],
+      portfolio: map['portfolio'],
+      profileUrl: map['profile_url'],
+    );
+  }
+
   static User user = User(
     name: "Diana Asebagu",
     portfolio: "Managing Director",

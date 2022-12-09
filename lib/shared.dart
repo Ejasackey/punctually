@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:punctually/style.dart';
 
 navTo(context, Widget screen) {
-  return Navigator.push(context, MaterialPageRoute(builder: (context) => screen));
+  return Navigator.pushReplacement(
+      context, MaterialPageRoute(builder: (context) => screen));
 }
 
 roundedButton({context, icon, onPressed}) => SizedBox(
