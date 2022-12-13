@@ -21,9 +21,9 @@ class MonthCubit extends Cubit<List<Month>> {
   }
 
   // ----------------------------------------------------------------------------------------
-  registerAttendance(userId, value) async {
+  registerAttendance(userId) async {
     try {
-      await firestoreService.registerAttendance(userId, value);
+      await firestoreService.registerAttendance(userId);
     } catch (e) {
       log(e.toString(), name: "Month Cubit: registerAttendance");
     }

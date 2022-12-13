@@ -3,11 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:punctually/cubit/month_cubit/cubit/month_cubit.dart';
 import 'package:punctually/cubit/profile_cubit/cubit/profile_cubit.dart';
 import 'package:punctually/cubit/qr_cubit/qr_cubit.dart';
+import 'package:punctually/models/user.dart';
 import 'package:punctually/style.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 
 class HomeScreen extends StatelessWidget {
-  HomeScreen({super.key});
+  User user;
+  HomeScreen({super.key, required this.user});
 
   @override
   Widget build(BuildContext context) {
@@ -43,9 +45,8 @@ class HomeScreen extends StatelessWidget {
                       width: 300,
                       child: QRView(
                         key: _qrCubit.qrKey,
-                        onQRViewCreated: (controller) =>
-                            _qrCubit.onQRViewCreated(
-                                controller, context, "ZHLNbngdO2ITDOjo7c9S"),
+                        onQRViewCreated: (controller) => _qrCubit
+                            .onQRViewCreated(controller, context, user.id),
                         overlay: QrScannerOverlayShape(
                           borderColor: primaryColor,
                           cutOutHeight: 290,
@@ -166,10 +167,10 @@ class HomeScreen extends StatelessWidget {
             width: 130,
             decoration: BoxDecoration(
               color: Colors.yellow,
-              image: ProfileCubit.me.profileUrl.isNotEmpty
+              image: user.profileUrl.isNotEmpty
                   ? DecorationImage(
                       image: NetworkImage(
-                        ProfileCubit.me.profileUrl,
+                        user.profileUrl,
                       ),
                       fit: BoxFit.cover,
                     )
@@ -185,9 +186,7 @@ class HomeScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  ProfileCubit.me.name.isNotEmpty
-                      ? ProfileCubit.me.name
-                      : "Employee name",
+                  user.name.isNotEmpty ? user.name : "Employee name",
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -197,9 +196,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  ProfileCubit.me.portfolio.isNotEmpty
-                      ? ProfileCubit.me.portfolio
-                      : "portfolio",
+                  user.portfolio.isNotEmpty ? user.portfolio : "portfolio",
                   style: TextStyle(
                       fontSize: 16, color: Colors.white.withOpacity(.9)),
                 ),

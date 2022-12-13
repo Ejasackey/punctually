@@ -54,12 +54,12 @@ class QRCubit extends Cubit<bool?> {
   }
 
   //--------------------------------------------------------------------------------------------
-  Future registerAttendance(userId, value) async {
+  Future registerAttendance(userId) async {
     try {
-      await firestoreService.registerAttendance(userId, value);
+      await firestoreService.registerAttendance(userId);
     } catch (e) {
       log(e.toString(), name: "QR cubit: registerAttendance");
-      throw e;
+      rethrow;
     }
   }
 
@@ -75,17 +75,17 @@ class QRCubit extends Cubit<bool?> {
           controller.pauseCamera();
           if (scanData.code! == "I Love You") {
             try {
-              await registerAttendance(userId, "L");
-              scanStatBox.put("status", DateTime.now());
+              await registerAttendance(userId);
+              scanStatBox.put("status", DateTime.now()); 
               emit(true);
             } catch (e) {
-              // TODO: show snackbar
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content:
                       Text("Coudn't connect, check internet and try again"),
                 ),
               );
+              await controller.resumeCamera();
               // emit(null);
             }
           } else {

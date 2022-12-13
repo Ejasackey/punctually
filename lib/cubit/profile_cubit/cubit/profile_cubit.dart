@@ -10,19 +10,19 @@ import 'package:punctually/shared.dart';
 
 part 'profile_state.dart';
 
-class ProfileCubit extends Cubit<ProfileState> {
+class ProfileCubit {
   FirestoreService firestoreService;
-  ProfileCubit({required this.firestoreService})
-      : super(ProfileLoaded(user: User.user));
-  static late dynamic me;
+  ProfileCubit({required this.firestoreService});
+  
 
   verifyUser(userId, context) async {
+    late dynamic me;
     try {
       me = await firestoreService.login(userId);
       if (me is Organization) {
         navTo(context, QRScreen(data: (me as Organization).qrCode));
       } else {
-        navTo(context, HomeScreen());
+        navTo(context, HomeScreen(user: (me as User)));
       }
     } catch (e) {
       ScaffoldMessenger.of(context)

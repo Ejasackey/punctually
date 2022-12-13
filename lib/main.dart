@@ -3,10 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:punctually/cubit/month_cubit/cubit/month_cubit.dart';
-import 'package:punctually/cubit/profile_cubit/cubit/profile_cubit.dart';
 import 'package:punctually/cubit/qr_cubit/qr_cubit.dart';
 import 'package:punctually/firebase_options.dart';
-import 'package:punctually/screens/home.dart';
 import 'package:punctually/screens/login.dart';
 import 'package:punctually/services/firebase_database.dart';
 import 'package:punctually/style.dart';
@@ -15,6 +13,7 @@ void main() async {
   await Hive.initFlutter();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await Hive.openBox<DateTime>("scanStat");
+  // await Hive.deleteFromDisk();
   runApp(const App());
 }
 
